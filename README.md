@@ -34,5 +34,5 @@ Just open the bookmark, type your city, get the weather, and go.
 ## 🚀 How to Run （运行）
 
 1. Click the link directly to use the web service provided by GitHub.
-   [weather dashboard]()
+   [weather dashboard](https://cochyu.github.io/Weather-Dashboard/)
 3. Download the `index.html` file and open it with Chrome or other browsers.
