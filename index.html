@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Dashboard · 天气仪表盘</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0b0f1a;
+      --surface:  #111827;
+      --border:   rgba(255,255,255,0.07);
+      --text:     #e8eaf0;
+      --muted:    #6b7280;
+      --accent:   #f0a500;
+      --accent2:  #38bdf8;
+      --danger:   #f87171;
+      --radius:   18px;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
+
+    /* ── background art ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 55% at 75% 10%, rgba(240,165,0,.13) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 20% 80%, rgba(56,189,248,.10) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    /* ── layout ── */
+    .wrap {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 48px 20px 80px;
+    }
+
+    /* ── header ── */
+    header {
+      text-align: center;
+      margin-bottom: 44px;
+      animation: fadeUp .6s ease both;
+    }
+    header .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      letter-spacing: -.02em;
+      color: var(--text);
+    }
+    header .logo span { color: var(--accent); }
+    header p {
+      margin-top: 8px;
+      font-size: .85rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    /* ── search ── */
+    .search-row {
+      display: flex; gap: 10px;
+      width: 100%; max-width: 480px;
+      margin-bottom: 48px;
+      animation: fadeUp .6s .1s ease both;
+    }
+    .search-row input {
+      flex: 1;
+      padding: 14px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .search-row input::placeholder { color: var(--muted); }
+    .search-row input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(240,165,0,.12);
+    }
+    .search-row button {
+      padding: 14px 24px;
+      background: var(--accent);
+      color: #0b0f1a;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      white-space: nowrap;
+    }
+    .search-row button:hover { opacity: .88; transform: translateY(-1px); }
+    .search-row button:active { transform: translateY(0); }
+
+    /* ── error ── */
+    #error-msg {
+      display: none;
+      color: var(--danger);
+      font-size: .85rem;
+      margin-top: -32px;
+      margin-bottom: 28px;
+      text-align: center;
+      animation: fadeUp .3s ease both;
+    }
+
+    /* ── weather card ── */
+    #card {
+      display: none;
+      width: 100%; max-width: 680px;
+      animation: fadeUp .5s ease both;
+    }
+
+    .card-main {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-main::after {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(240,165,0,.08) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* city + date */
+    .city-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .city-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      letter-spacing: -.02em;
+      line-height: 1.1;
+    }
+    .city-sub {
+      font-size: .78rem;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .local-time {
+      font-size: .82rem;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.6;
+    }
+
+    /* temp + icon */
+    .temp-row {
+      display: flex; align-items: center; gap: 20px;
+      margin: 28px 0 20px;
+    }
+    .weather-icon { font-size: 5rem; line-height: 1; }
+    .temp-block {}
+    .temp-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(4rem, 10vw, 6rem);
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+    .temp-val sup { font-size: 2rem; vertical-align: top; margin-top: .5rem; }
+    .temp-desc {
+      font-size: .95rem;
+      color: var(--muted);
+      text-transform: capitalize;
+      margin-top: 4px;
+    }
+    .temp-feels {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* stats grid */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+    }
+    @media (max-width: 520px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat-card {
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .stat-label {
+      font-size: .7rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .stat-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      letter-spacing: -.01em;
+    }
+    .stat-unit {
+      font-family: 'DM Sans', sans-serif;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+
+    /* sun row */
+    .sun-row {
+      display: flex; gap: 12px;
+      margin-top: 12px;
+    }
+    .sun-card {
+      flex: 1;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .sun-icon { font-size: 1.6rem; }
+    .sun-info {}
+    .sun-info .s-label { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .sun-info .s-val { font-family: 'DM Serif Display', serif; font-size: 1.25rem; }
+
+    /* forecast */
+    .forecast {
+      margin-top: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+    }
+    .forecast h3 {
+      font-size: .72rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+    .forecast-list {
+      display: flex; gap: 8px; overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .forecast-list::-webkit-scrollbar { display: none; }
+    .fc-item {
+      flex: 0 0 80px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .fc-day { font-size: .7rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+    .fc-icon { font-size: 1.6rem; }
+    .fc-temp { font-family: 'DM Serif Display', serif; font-size: 1.1rem; }
+    .fc-min { font-size: .72rem; color: var(--muted); }
+
+    /* footer */
+    footer {
+      margin-top: 52px;
+      font-size: .75rem;
+      color: var(--muted);
+      text-align: center;
+      letter-spacing: .05em;
+      animation: fadeUp .6s .3s ease both;
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* loader */
+    #loader {
+      display: none;
+      gap: 6px;
+      margin-bottom: 32px;
+    }
+    #loader span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.2s ease infinite;
+    }
+    #loader span:nth-child(2) { animation-delay: .2s; }
+    #loader span:nth-child(3) { animation-delay: .4s; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: .2; transform: scale(.8); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">Minimal<span>Weather</span></div>
+    <p>天气仪表盘 · No Ads · No Noise</p>
+  </header>
+
+  <div class="search-row">
+    <input id="city-input" type="text" placeholder="输入城市名，例如：Beijing" />
+    <button id="search-btn">查询</button>
+  </div>
+
+  <div id="error-msg"></div>
+
+  <div id="loader" style="display:flex">
+    <span></span><span></span><span></span>
+  </div>
+  <!-- loader is hidden by default; shown via JS -->
+
+  <div id="card">
+    <div class="card-main">
+      <div class="city-row">
+        <div>
+          <div class="city-name" id="w-city">—</div>
+          <div class="city-sub" id="w-country">—</div>
+        </div>
+        <div class="local-time" id="w-time">—</div>
+      </div>
+
+      <div class="temp-row">
+        <div class="weather-icon" id="w-icon">🌤️</div>
+        <div class="temp-block">
+          <div class="temp-val" id="w-temp">—<sup>°C</sup></div>
+          <div class="temp-desc" id="w-desc">—</div>
+          <div class="temp-feels" id="w-feels">体感温度 —</div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">湿度</div>
+          <div class="stat-val" id="w-hum">—<span class="stat-unit">%</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">风速</div>
+          <div class="stat-val" id="w-wind">—<span class="stat-unit"> m/s</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">气压</div>
+          <div class="stat-val" id="w-pres">—<span class="stat-unit"> hPa</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">能见度</div>
+          <div class="stat-val" id="w-vis">—<span class="stat-unit"> km</span></div>
+        </div>
+      </div>
+
+      <div class="sun-row">
+        <div class="sun-card">
+          <div class="sun-icon">🌅</div>
+          <div class="sun-info">
+            <div class="s-label">日出</div>
+            <div class="s-val" id="w-rise">—</div>
+          </div>
+        </div>
+        <div class="sun-card">
+          <div class="sun-icon">🌇</div>
+          <div class="sun-info">
+            <div class="s-label">日落</div>
+            <div class="s-val" id="w-set">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="forecast" id="forecast-section" style="display:none">
+      <h3>未来 5 天预报</h3>
+      <div class="forecast-list" id="forecast-list"></div>
+    </div>
+  </div>
+
+  <footer>
+    数据来源：<a href="https://openweathermap.org" target="_blank">OpenWeather API</a>
+    &nbsp;·&nbsp; 开源于 <a href="https://github.com" target="_blank">GitHub Pages</a>
+  </footer>
+</div>
+
+<script>
+  // ── CONFIG ── 替换为你自己的 API Key
+  const API_KEY = '74530a4dbe8da601a93d097cff43b550';
+  const BASE    = 'https://api.openweathermap.org/data/2.5';
+
+  // ── weather code → emoji map ──
+  const iconMap = id => {
+    if (id >= 200 && id < 300) return '⛈️';
+    if (id >= 300 && id < 400) return '🌦️';
+    if (id >= 500 && id < 600) return '🌧️';
+    if (id >= 600 && id < 700) return '❄️';
+    if (id >= 700 && id < 800) return '🌫️';
+    if (id === 800)             return '☀️';
+    if (id === 801)             return '🌤️';
+    if (id === 802)             return '⛅';
+    if (id >= 803)              return '☁️';
+    return '🌡️';
+  };
+
+  const fmtTime = (unix, tz) => {
+    const d = new Date((unix + tz) * 1000);
+    return d.toUTCString().slice(17, 22);
+  };
+
+  const show  = el => el.style.display = '';
+  const hide  = el => el.style.display = 'none';
+  const $     = id => document.getElementById(id);
+
+  async function fetchWeather(city) {
+    const errEl    = $('error-msg');
+    const loader   = $('loader');
+    const card     = $('card');
+    const fSection = $('forecast-section');
+
+    hide(errEl); hide(card); hide(fSection);
+    loader.style.display = 'flex';
+
+    try {
+      // current
+      const r = await fetch(`${BASE}/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric&lang=zh_cn`);
+      if (!r.ok) throw new Error(r.status === 404 ? `找不到城市"${city}"，请检查拼写` : '请求失败，请稍后重试');
+      const d = await r.json();
+
+      $('w-city').textContent    = d.name;
+      $('w-country').textContent = d.sys.country;
+      $('w-icon').textContent    = iconMap(d.weather[0].id);
+      $('w-temp').innerHTML      = `${Math.round(d.main.temp)}<sup>°C</sup>`;
+      $('w-desc').textContent    = d.weather[0].description;
+      $('w-feels').textContent   = `体感温度 ${Math.round(d.main.feels_like)}°C`;
+      $('w-hum').innerHTML       = `${d.main.humidity}<span class="stat-unit">%</span>`;
+      $('w-wind').innerHTML      = `${d.wind.speed.toFixed(1)}<span class="stat-unit"> m/s</span>`;
+      $('w-pres').innerHTML      = `${d.main.pressure}<span class="stat-unit"> hPa</span>`;
+      $('w-vis').innerHTML       = `${(d.visibility / 1000).toFixed(1)}<span class="stat-unit"> km</span>`;
+      $('w-rise').textContent    = fmtTime(d.sys.sunrise, d.timezone);
+      $('w-set').textContent     = fmtTime(d.sys.sunset,  d.timezone);
+
+      const now = new Date((Date.now() / 1000 + d.timezone) * 1000);
+      $('w-time').innerHTML = `${now.toUTCString().slice(0,3)}<br>${now.toUTCString().slice(5,16)}<br>${now.toUTCString().slice(17,22)} 当地时间`;
+
+      // 5-day forecast
+      const fr = await fetch(`${BASE}/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric&lang=zh_cn`);
+      if (fr.ok) {
+        const fd = await fr.json();
+        // one entry per day at noon
+        const days = {};
+        fd.list.forEach(item => {
+          const date = item.dt_txt.slice(0, 10);
+          if (!days[date] || Math.abs(new Date(item.dt_txt).getHours() - 12) < Math.abs(new Date(days[date].dt_txt).getHours() - 12))
+            days[date] = item;
+        });
+        const list = Object.values(days).slice(0, 5);
+        const dayNames = ['日','一','二','三','四','五','六'];
+        $('forecast-list').innerHTML = list.map(item => {
+          const dt  = new Date(item.dt_txt);
+          const day = dayNames[dt.getDay()];
+          return `<div class="fc-item">
+            <div class="fc-day">周${day}</div>
+            <div class="fc-icon">${iconMap(item.weather[0].id)}</div>
+            <div class="fc-temp">${Math.round(item.main.temp)}°</div>
+            <div class="fc-min">${Math.round(item.main.temp_min)}° / ${Math.round(item.main.temp_max)}°</div>
+          </div>`;
+        }).join('');
+        show(fSection);
+      }
+
+      hide(loader); show(card);
+    } catch(e) {
+      hide(loader);
+      errEl.textContent  = e.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  $('search-btn').addEventListener('click', () => {
+    const city = $('city-input').value.trim();
+    if (city) fetchWeather(city);
+  });
+  $('city-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const city = $('city-input').value.trim();
+      if (city) fetchWeather(city);
+    }
+  });
+
+  // hide loader on initial load
+  $('loader').style.display = 'none';
+</script>
+</body>
+</html>
