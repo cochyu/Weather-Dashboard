@@ -1,7 +1,6 @@
 # Weather-Dashboard
 一个简洁实用的天气预报
-
-#创建始于2026.03.24
+创建始于2026.03.24
 
 # 🌤️ Weather Dashboard (天气仪表盘)
 
@@ -32,8 +31,8 @@ Just open the bookmark, type your city, get the weather, and go.
 * [OpenWeather API](https://openweathermap.org/) for real-time weather data
 * Hosted on GitHub Pages
 
-## 🚀 How to Run Locally (本地运行)
+## 🚀 How to Run （运行）
 
-1. Clone this repository:
-   ```bash
-   git clone [https://github.com/yourusername/minimal-weather.git](https://github.com/cochyu/Weather-Dashboard/tree/main)]
+1. Click the link directly to use the web service provided by GitHub.
+   [weather dashboard]()
+3. Download the `index.html` file and open it with Chrome or other browsers.
