@@ -1,0 +1,2 @@
+# 复制为 worker/.dev.vars 后填入，仅用于本地 Worker 调试。
+DEEPSEEK_API_KEY=sk-your-deepseek-key

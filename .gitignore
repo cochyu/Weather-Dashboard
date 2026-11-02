@@ -1,0 +1,19 @@
+# Secrets
+.env
+.env.*
+!.env.example
+worker/.dev.vars
+worker/.dev.vars.*
+!worker/.dev.vars.example
+
+# Dependencies / tooling
+node_modules/
+.wrangler/
+.vercel/
+.netlify/
+
+# Local artifacts
+screenshots/
+*.log
+.DS_Store
+Thumbs.db

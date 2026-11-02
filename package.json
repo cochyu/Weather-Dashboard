@@ -1,0 +1,17 @@
+{
+  "name": "skycast-weather-dashboard",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "天穹天气 · 中文天气仪表盘与 DeepSeek AI 天气助手",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node server/server.mjs",
+    "start": "node server/server.mjs",
+    "check": "node --check assets/js/app.js && node --check assets/js/api.js && node --check assets/js/ai.js && node --check assets/js/cities.js && node --check assets/js/icons.js && node --check assets/js/utils.js && node --check server/server.mjs && node --check shared/ai-core.mjs && node --check worker/worker.js",
+    "deploy:ai": "npx wrangler deploy -c worker/wrangler.toml"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
