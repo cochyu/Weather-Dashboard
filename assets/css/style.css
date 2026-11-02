@@ -1020,6 +1020,7 @@ svg {
   align-items: center;
   gap: 5px;
   padding: 5px 8px;
+  cursor: pointer;
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--muted);

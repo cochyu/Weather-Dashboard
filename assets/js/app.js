@@ -282,6 +282,13 @@ function bindEvents() {
     button.addEventListener('click', openSettings);
   });
 
+  dom.aiStatus?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openSettings();
+    }
+  });
+
   dom.closeSettingsButtons.forEach((button) => {
     button.addEventListener('click', () => dom.aiSettingsDialog?.close());
   });
