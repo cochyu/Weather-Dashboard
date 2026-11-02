@@ -1,9 +1,8 @@
-/* 天穹天气 · 天气数据层（OpenWeather 主源 + Open-Meteo 兜底） */
+/* 天穹天气 · 天气数据层（Cloudflare Worker 代理 + Open-Meteo 兜底） */
 
 import { CONFIG } from './config.js';
 
-const { openWeather } = CONFIG;
-const badKeys = new Set();
+const { weather } = CONFIG;
 
 export class WeatherError extends Error {
   constructor(message, code = 'unknown', status = 0) {
@@ -14,48 +13,49 @@ export class WeatherError extends Error {
   }
 }
 
-function keyCandidates() {
-  return [openWeather.apiKey, ...(openWeather.fallbackKeys || [])]
+function apiBases() {
+  return [weather.apiBase, weather.fallbackBase]
     .filter(Boolean)
-    .filter((key, index, array) => array.indexOf(key) === index);
+    .filter((base, index, array) => array.indexOf(base) === index);
 }
 
-function errorMessageForStatus(status) {
-  if (status === 401) return '天气服务密钥无效，请检查 OpenWeather Key 配置。';
-  if (status === 404) return '没有找到这个城市，换一个名字试试。';
-  if (status === 429) return '天气服务请求过于频繁，请稍后再试。';
-  if (status >= 500) return '天气服务暂时不可用，请稍后再试。';
-  return '天气数据请求失败，请稍后再试。';
+async function fetchTimed(url, options, outerSignal, timeoutMs = 6500) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const onOuterAbort = () => controller.abort();
+  if (outerSignal) {
+    if (outerSignal.aborted) throw new DOMException('Aborted', 'AbortError');
+    outerSignal.addEventListener('abort', onOuterAbort, { once: true });
+  }
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+    outerSignal?.removeEventListener('abort', onOuterAbort);
+  }
 }
 
-async function openWeatherRequest(path, params = {}, signal) {
-  const keys = keyCandidates();
-  let lastError = null;
+async function proxyJson(path, params = {}, signal) {
+  const errors = [];
 
-  for (const key of keys) {
-    if (badKeys.has(key)) continue;
-    const url = new URL(path, openWeather.baseUrl);
-    Object.entries({ ...params, appid: key }).forEach(([name, value]) => {
+  for (const base of apiBases()) {
+    const url = new URL(path, base);
+    Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        url.searchParams.set(name, value);
+        url.searchParams.set(key, String(value));
       }
     });
 
     let response;
     try {
-      response = await fetch(url.toString(), {
-        signal,
+      response = await fetchTimed(url.toString(), {
         headers: { Accept: 'application/json' },
         cache: 'no-store'
-      });
+      }, signal);
     } catch (error) {
-      if (error?.name === 'AbortError') throw error;
-      throw new WeatherError('网络连接失败，请检查网络后重试。', 'network');
-    }
-
-    if (response.status === 401 || response.status === 403) {
-      badKeys.add(key);
-      lastError = new WeatherError(errorMessageForStatus(401), 'auth', 401);
+      // 外层取消（比如用户切换城市）不继续尝试；单次代理超时则尝试下一个地址。
+      if (signal?.aborted) throw error;
+      errors.push(new WeatherError('天气代理响应超时或无法连接。', 'network'));
       continue;
     }
 
@@ -63,55 +63,70 @@ async function openWeatherRequest(path, params = {}, signal) {
       let detail = '';
       try {
         const payload = await response.json();
-        detail = payload?.message || '';
+        detail = payload?.error || payload?.message || '';
       } catch {
         /* ignore */
       }
-      throw new WeatherError(
-        detail && response.status === 404 ? `找不到「${params.q || '该城市'}」，请检查名称。` : errorMessageForStatus(response.status),
-        response.status === 404 ? 'not_found' : 'http',
+      errors.push(new WeatherError(
+        detail || `天气代理返回 ${response.status}`,
+        'proxy_http',
         response.status
-      );
+      ));
+      continue;
     }
 
     return response.json();
   }
 
-  throw lastError || new WeatherError('天气服务密钥无效，请更新配置。', 'auth', 401);
+  throw errors[errors.length - 1] || new WeatherError('天气服务暂时不可用，请稍后再试。', 'proxy');
 }
 
-export async function fetchCurrentWeather(lat, lon, signal) {
-  return openWeatherRequest('/data/2.5/weather', {
-    lat,
-    lon,
-    units: 'metric',
-    lang: openWeather.lang
-  }, signal);
-}
+export async function fetchWeatherBundle(lat, lon, location, signal) {
+  try {
+    const bundle = await proxyJson('/api/weather', { lat, lon }, signal);
+    if (!bundle?.current) {
+      throw new WeatherError('天气代理没有返回当前天气。', 'empty_bundle');
+    }
+    return {
+      current: bundle.current,
+      forecast: bundle.forecast || null,
+      air: bundle.air || null,
+      source: bundle.source || 'openweather'
+    };
+  } catch (error) {
+    if (error?.name === 'AbortError') throw error;
 
-export async function fetchForecast(lat, lon, signal) {
-  return openWeatherRequest('/data/2.5/forecast', {
-    lat,
-    lon,
-    units: 'metric',
-    lang: openWeather.lang
-  }, signal);
-}
-
-export async function fetchAirQuality(lat, lon, signal) {
-  return openWeatherRequest('/data/2.5/air_pollution', { lat, lon }, signal);
+    // Worker 全部不可达时的最后兜底：直接请求 Open-Meteo。
+    // 在部分网络环境下 Open-Meteo 仍可访问；如果也不可达，页面会给出明确提示。
+    try {
+      const fallback = await fetchOpenMeteoBundle(lat, lon, location, signal);
+      return { ...fallback, source: 'open-meteo' };
+    } catch (fallbackError) {
+      if (fallbackError?.name === 'AbortError') throw fallbackError;
+      throw new WeatherError(
+        error?.message || fallbackError?.message || '天气服务暂时不可用，请稍后再试。',
+        'all_failed'
+      );
+    }
+  }
 }
 
 export async function searchGeocode(query, signal) {
   try {
-    const results = await openWeatherRequest('/geo/1.0/direct', {
-      q: query,
-      limit: 8
-    }, signal);
+    const results = await proxyJson('/api/geocode', { q: query }, signal);
     return Array.isArray(results) ? results : [];
   } catch (error) {
     if (error?.name === 'AbortError') throw error;
     return searchGeocodeOpenMeteo(query, signal);
+  }
+}
+
+export async function reverseGeocode(lat, lon, signal) {
+  try {
+    const result = await proxyJson('/api/reverse', { lat, lon }, signal);
+    return result || null;
+  } catch {
+    return null;
   }
 }
 
@@ -137,49 +152,6 @@ async function searchGeocodeOpenMeteo(query, signal) {
       lon: item.longitude,
       _population: item.population || 0
     }));
-}
-
-export async function reverseGeocode(lat, lon, signal) {
-  const results = await openWeatherRequest('/geo/1.0/reverse', {
-    lat,
-    lon,
-    limit: 1
-  }, signal);
-  return Array.isArray(results) && results.length ? results[0] : null;
-}
-
-/* ── 统一天气包：主源失败时自动切到 Open-Meteo ─────────────── */
-
-export async function fetchWeatherBundle(lat, lon, location, signal) {
-  const [currentResult, forecastResult, airResult] = await Promise.allSettled([
-    fetchCurrentWeather(lat, lon, signal),
-    fetchForecast(lat, lon, signal),
-    fetchAirQuality(lat, lon, signal)
-  ]);
-
-  if (currentResult.status === 'fulfilled') {
-    return {
-      current: currentResult.value,
-      forecast: forecastResult.status === 'fulfilled' ? forecastResult.value : null,
-      air: airResult.status === 'fulfilled' ? airResult.value : null,
-      source: 'openweather'
-    };
-  }
-
-  if (currentResult.reason?.name === 'AbortError') throw currentResult.reason;
-
-  // OpenWeather Key 失效、额度受限或网络不可达时，使用免 Key 的
-  // Open-Meteo 维持页面可用；数据结构会被归一化成 OpenWeather 形状。
-  try {
-    const fallback = await fetchOpenMeteoBundle(lat, lon, location, signal);
-    return { ...fallback, source: 'open-meteo' };
-  } catch (fallbackError) {
-    if (fallbackError?.name === 'AbortError') throw fallbackError;
-    throw new WeatherError(
-      currentResult.reason?.message || fallbackError?.message || '天气服务暂时不可用，请稍后再试。',
-      'all_failed'
-    );
-  }
 }
 
 /* ── Open-Meteo 兜底与归一化 ───────────────────────────────── */

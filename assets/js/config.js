@@ -2,27 +2,22 @@
  * 天穹天气 · 前端公开配置
  *
  * 安全约定：
- * 1. OpenWeather Key 是免费天气 Key，供浏览器直连天气接口使用；
- * 2. DeepSeek Key 永远不要写在这里。它只应存在于 server/.env、
- *    Cloudflare Worker Secret 或用户自己浏览器的「本机 Key」设置中。
+ * 1. 前端不保存 OpenWeather 或 DeepSeek 的任何 Key；
+ * 2. 天气和 AI 都通过 Cloudflare Worker 代理；
+ * 3. 自定义域名优先，workers.dev 仅作为备用。
  */
 export const CONFIG = Object.freeze({
-  openWeather: {
-    // 若你更换了 OpenWeather Key，只需替换这一行。
-    apiKey: '57161eadf26deecd5ff64107ed3fb0a0',
-    // 可追加备用 Key；遇到 401 时会自动尝试下一个。
-    fallbackKeys: [],
-    baseUrl: 'https://api.openweathermap.org',
+  weather: {
+    // 浏览器只访问 Cloudflare，Worker 再访问 OpenWeather。
+    apiBase: 'https://api.wethdbd.top',
+    fallbackBase: 'https://weather-dashboard-ai.quixblazevow.workers.dev',
     lang: 'zh_cn',
     units: 'metric'
   },
 
   ai: {
-    /**
-     * 已部署的 Cloudflare Worker 代理。
-     * DeepSeek Key 只保存在 Worker Secret 中，前端不会接触 Key。
-     */
-    proxyUrl: 'https://weather-dashboard-ai.quixblazevow.workers.dev/api/ai',
+    proxyUrl: 'https://api.wethdbd.top/api/ai',
+    fallbackProxyUrl: 'https://weather-dashboard-ai.quixblazevow.workers.dev/api/ai',
     model: 'deepseek-chat',
     maxHistory: 8
   },

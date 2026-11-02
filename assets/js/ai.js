@@ -92,11 +92,14 @@ export async function initAI({ force = false } = {}) {
     /* 隐私模式下忽略 */
   }
 
-  const proxyUrl = trimSlash(CONFIG.ai.proxyUrl);
-  aiState.proxyUrl = proxyUrl;
-  aiState.healthUrl = deriveHealthUrl(proxyUrl);
+  const candidates = [CONFIG.ai.proxyUrl, CONFIG.ai.fallbackProxyUrl]
+    .map(trimSlash)
+    .filter(Boolean)
+    .filter((url, index, array) => array.indexOf(url) === index);
 
-  if (proxyUrl) {
+  for (const proxyUrl of candidates) {
+    aiState.proxyUrl = proxyUrl;
+    aiState.healthUrl = deriveHealthUrl(proxyUrl);
     const result = await probeProxy(proxyUrl);
     if (result.ok && result.configured) {
       aiState.mode = 'proxy';
@@ -108,6 +111,8 @@ export async function initAI({ force = false } = {}) {
     aiState.lastError = result.message;
   }
 
+  aiState.proxyUrl = '';
+  aiState.healthUrl = '';
   aiState.mode = 'local';
   aiState.status = 'local';
   aiState.message = '本地简报';

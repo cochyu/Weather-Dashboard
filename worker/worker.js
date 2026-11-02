@@ -1,11 +1,14 @@
 /*
- * 天穹天气 · DeepSeek 安全代理（Cloudflare Worker）
+ * 天穹天气 · Cloudflare Worker
+ *
+ * 同时承担：
+ * 1. OpenWeather 天气反向代理（解决中国大陆无法直连 OpenWeather）；
+ * 2. DeepSeek AI 安全代理（Key 不进入前端）。
  *
  * 部署：
  *   npx wrangler deploy -c worker/wrangler.toml
  *   npx wrangler secret put DEEPSEEK_API_KEY -c worker/wrangler.toml
- *
- * 部署后把 https://<worker>.<subdomain>.workers.dev/api/ai 填入网站的 AI 设置。
+ *   npx wrangler secret put OPENWEATHER_API_KEY -c worker/wrangler.toml
  */
 
 import {
@@ -14,6 +17,7 @@ import {
   corsHeaders,
   parseAllowedOrigins
 } from '../shared/ai-core.mjs';
+import { handleWeatherRequest } from './weather.js';
 
 const buckets = new Map();
 const WINDOW_MS = 10 * 60 * 1000;
@@ -65,9 +69,12 @@ export default {
     if (url.pathname === '/' && request.method === 'GET') {
       return json({
         ok: true,
-        service: 'weather-dashboard-ai',
+        service: 'weather-dashboard-api',
         endpoints: {
           health: '/api/health',
+          weather: '/api/weather?lat=&lon=',
+          geocode: '/api/geocode?q=',
+          reverse: '/api/reverse?lat=&lon=',
           chat: 'POST /api/ai'
         }
       }, 200, cors);
@@ -76,10 +83,19 @@ export default {
     if (url.pathname === '/api/health' && request.method === 'GET') {
       return json({
         ok: true,
-        service: 'weather-dashboard-ai',
+        service: 'weather-dashboard-api',
         configured: Boolean(env.DEEPSEEK_API_KEY),
+        weatherConfigured: Boolean(env.OPENWEATHER_API_KEY),
         model: env.DEEPSEEK_MODEL || 'deepseek-chat'
       }, 200, cors);
+    }
+
+    if (
+      url.pathname === '/api/weather'
+      || url.pathname === '/api/geocode'
+      || url.pathname === '/api/reverse'
+    ) {
+      return handleWeatherRequest(request, env, url, cors);
     }
 
     if (url.pathname === '/api/ai' && request.method === 'POST') {
