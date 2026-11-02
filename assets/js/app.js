@@ -23,11 +23,7 @@ import {
   askAI,
   briefSourceLabel,
   buildBrief,
-  clearSettings,
-  getSavedSettings,
-  initAI,
-  saveSettings,
-  testSettings
+  initAI
 } from './ai.js';
 import { uiIcon, weatherIcon } from './icons.js';
 import {
@@ -109,14 +105,11 @@ function cacheDom() {
     'chatLog', 'quickPrompts', 'chatForm', 'chatInput', 'sendBtn', 'hourlyStrip',
     'hourlySummary', 'dailyList', 'dailySummary', 'metricGrid', 'metricsFoot',
     'sunVisual', 'sunriseTime', 'sunsetTime', 'sunStatus', 'daylightDuration',
-    'aqiBadge', 'aqiBody', 'appLoader', 'toast', 'aiSettingsDialog', 'aiSettingsForm',
-    'proxyInput', 'keyInput', 'settingsStatus', 'saveAiBtn', 'clearAiBtn', 'deepDiveBtn'
+    'aqiBadge', 'aqiBody', 'appLoader', 'toast', 'deepDiveBtn'
   ];
   ids.forEach((id) => {
     dom[id] = document.getElementById(id);
   });
-  dom.openSettingsButtons = $$('[data-open-ai-settings]');
-  dom.closeSettingsButtons = $$('[data-close-settings]');
   dom.heroCard = $('#currentCard');
 }
 
@@ -276,27 +269,6 @@ function bindEvents() {
     if (event.target.closest('#deepDiveBtn')) {
       sendChat('请结合当前天气和未来预报，给我一份更详细的今日出行建议。');
     }
-  });
-
-  dom.openSettingsButtons.forEach((button) => {
-    button.addEventListener('click', openSettings);
-  });
-
-  dom.aiStatus?.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      openSettings();
-    }
-  });
-
-  dom.closeSettingsButtons.forEach((button) => {
-    button.addEventListener('click', () => dom.aiSettingsDialog?.close());
-  });
-
-  dom.aiSettingsForm?.addEventListener('submit', saveAISettingsForm);
-  dom.clearAiBtn?.addEventListener('click', clearAISettings);
-  dom.aiSettingsDialog?.addEventListener('click', (event) => {
-    if (event.target === dom.aiSettingsDialog) dom.aiSettingsDialog.close();
   });
 
   document.addEventListener('keydown', (event) => {
@@ -1145,13 +1117,10 @@ function updateAIStatus() {
   } else if (aiState.mode === 'proxy') {
     dom.aiStatus.classList.add('is-online');
     dom.aiStatus.innerHTML = '<i></i> DeepSeek 在线';
-  } else if (aiState.mode === 'byok') {
-    dom.aiStatus.classList.add('is-online');
-    dom.aiStatus.innerHTML = '<i></i> 本机 Key';
   } else {
     dom.aiStatus.classList.add('is-local');
     dom.aiStatus.innerHTML = '<i></i> 本地简报';
-    dom.aiStatus.title = aiState.lastError || '配置 DeepSeek 代理后可获得更深入的分析';
+    dom.aiStatus.title = aiState.lastError || 'AI 服务暂不可用，已切换到本地智能简报';
   }
   if (dom.briefSource) dom.briefSource.textContent = briefSourceLabel();
   if (dom.sendBtn) dom.sendBtn.title = aiState.mode === 'local' ? '使用本地智能简报回答' : '发送给 DeepSeek';
@@ -1215,7 +1184,7 @@ async function sendChat(rawQuestion) {
   try {
     const result = await askAI(question, context, state.aiHistory.slice(0, -1));
     typing.remove();
-    const meta = result.mode === 'local' ? '本地智能简报 · 配置 DeepSeek 可获得更深入的分析' : `DeepSeek · ${result.model || 'deepseek-chat'}`;
+    const meta = result.mode === 'local' ? '本地智能简报 · AI 服务暂不可用' : `DeepSeek · ${result.model || 'deepseek-chat'}`;
     addMessage('assistant', result.reply, { meta });
     state.aiHistory.push({ role: 'assistant', content: result.reply });
     state.aiHistory = state.aiHistory.slice(-CONFIG.ai.maxHistory);
@@ -1300,61 +1269,6 @@ function saveRecent(location) {
     ...state.recent.filter((existing) => locationKey(existing) !== locationKey(item))
   ].slice(0, CONFIG.app.maxRecent);
   writeJson(STORE_RECENT, state.recent);
-}
-
-/* ── AI 设置 ─────────────────────────────────────────────── */
-
-function openSettings() {
-  if (!dom.aiSettingsDialog) return;
-  const saved = getSavedSettings();
-  dom.proxyInput.value = saved.proxyUrl || CONFIG.ai.proxyUrl || (aiState.mode === 'proxy' ? aiState.proxyUrl : '');
-  dom.keyInput.value = saved.apiKey || '';
-  dom.settingsStatus.textContent = aiState.mode === 'proxy'
-    ? '当前已连接 DeepSeek 代理。'
-    : aiState.mode === 'byok'
-      ? '当前使用本机 DeepSeek Key。'
-      : '当前使用本地智能简报。';
-  dom.settingsStatus.dataset.type = 'info';
-  dom.aiSettingsDialog.showModal();
-}
-
-async function saveAISettingsForm(event) {
-  event.preventDefault();
-  const proxyUrl = dom.proxyInput.value.trim();
-  const apiKey = dom.keyInput.value.trim();
-  dom.saveAiBtn.disabled = true;
-  dom.settingsStatus.textContent = '正在测试连接…';
-  dom.settingsStatus.dataset.type = 'info';
-
-  try {
-    const result = await testSettings({ proxyUrl, apiKey });
-    saveSettings({ proxyUrl, apiKey });
-    await initAI({ force: true });
-    updateAIStatus();
-    if (result.ok) {
-      dom.settingsStatus.textContent = result.message;
-      dom.settingsStatus.dataset.type = 'success';
-      window.setTimeout(() => dom.aiSettingsDialog.close(), 650);
-    } else {
-      dom.settingsStatus.textContent = result.message || '连接失败，已保留本地简报模式。';
-      dom.settingsStatus.dataset.type = 'error';
-    }
-  } catch (error) {
-    dom.settingsStatus.textContent = error?.message || '测试失败，请检查地址或网络。';
-    dom.settingsStatus.dataset.type = 'error';
-  } finally {
-    dom.saveAiBtn.disabled = false;
-  }
-}
-
-async function clearAISettings() {
-  clearSettings();
-  dom.proxyInput.value = '';
-  dom.keyInput.value = '';
-  await initAI({ force: true });
-  updateAIStatus();
-  dom.settingsStatus.textContent = '已清除本机 AI 配置，当前使用本地简报。';
-  dom.settingsStatus.dataset.type = 'info';
 }
 
 /* ── 启动 ─────────────────────────────────────────────────── */

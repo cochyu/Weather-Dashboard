@@ -19,14 +19,11 @@ export const CONFIG = Object.freeze({
 
   ai: {
     /**
-     * 推荐：部署 worker/ 后填入你的 Cloudflare Worker 地址，
-     * 例如 https://weather-dashboard-ai.example.workers.dev/api/ai
-     * 留空时，本地开发会自动连接同源 /api/ai；线上则使用本地智能简报。
+     * 已部署的 Cloudflare Worker 代理。
+     * DeepSeek Key 只保存在 Worker Secret 中，前端不会接触 Key。
      */
-    proxyUrl: '',
+    proxyUrl: 'https://weather-dashboard-ai.quixblazevow.workers.dev/api/ai',
     model: 'deepseek-chat',
-    // 允许用户在浏览器里临时填写自己的 DeepSeek Key（仅保存在本机）。
-    allowByok: true,
     maxHistory: 8
   },
 

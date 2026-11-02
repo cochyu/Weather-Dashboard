@@ -422,17 +422,6 @@ svg {
   height: 19px;
 }
 
-.icon-btn.small {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-}
-
-.icon-btn.small svg {
-  width: 16px;
-  height: 16px;
-}
-
 .unit-toggle {
   width: auto;
   min-width: 50px;
@@ -945,7 +934,7 @@ svg {
 .ai-head {
   position: relative;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
   gap: 11px;
   padding: 22px 20px 0;
@@ -1020,7 +1009,6 @@ svg {
   align-items: center;
   gap: 5px;
   padding: 5px 8px;
-  cursor: pointer;
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--muted);
@@ -2206,223 +2194,6 @@ svg {
   animation-delay: 1.4s;
 }
 
-/* ── Dialog ───────────────────────────────────────────────── */
-
-.settings-dialog {
-  width: min(530px, calc(100vw - 30px));
-  max-height: min(760px, calc(100vh - 30px));
-  overflow: auto;
-  padding: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: 26px;
-  background: linear-gradient(155deg, #111c35, #080f1f 72%);
-  box-shadow: 0 40px 120px -20px rgba(0, 0, 0, 0.95);
-  color: var(--text);
-}
-
-.settings-dialog::backdrop {
-  background: rgba(2, 6, 14, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.settings-dialog[open] {
-  animation: dialog-in 0.24s ease both;
-}
-
-.dialog-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 22px 22px 0;
-}
-
-.dialog-head h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 620;
-  letter-spacing: -0.03em;
-}
-
-.dialog-body {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  padding: 18px 22px;
-}
-
-.settings-note {
-  padding: 13px 14px;
-  border: 1px solid rgba(255, 209, 102, 0.14);
-  border-radius: 14px;
-  background: rgba(255, 209, 102, 0.05);
-}
-
-.settings-note strong {
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.settings-note p {
-  margin: 5px 0 0;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.65;
-}
-
-.settings-note code,
-.field small code {
-  padding: 1px 4px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--accent-2);
-  font-family: var(--mono);
-  font-size: 9px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.field > span {
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 550;
-}
-
-.field > span em {
-  margin-left: 4px;
-  padding: 2px 5px;
-  border-radius: 4px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 8px;
-  font-style: normal;
-  font-weight: 600;
-}
-
-.input-shell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: rgba(5, 11, 23, 0.45);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.input-shell:focus-within {
-  border-color: rgba(103, 232, 249, 0.35);
-  box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.06);
-}
-
-.input-shell svg {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 auto;
-  color: var(--muted-2);
-}
-
-.input-shell input {
-  width: 100%;
-  height: 42px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--text);
-  font-size: 11.5px;
-}
-
-.input-shell input::placeholder {
-  color: var(--muted-2);
-}
-
-.field small {
-  color: var(--muted-2);
-  font-size: 9px;
-  line-height: 1.55;
-}
-
-.or {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted-2);
-  font-size: 8px;
-}
-
-.or::before,
-.or::after {
-  content: "";
-  height: 1px;
-  flex: 1;
-  background: var(--border);
-}
-
-.settings-status {
-  min-height: 16px;
-  margin: 0;
-  color: var(--muted-2);
-  font-size: 10px;
-}
-
-.settings-status[data-type="success"] { color: var(--success); }
-.settings-status[data-type="error"] { color: var(--danger); }
-
-.dialog-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px 22px 20px;
-  border-top: 1px solid var(--border);
-}
-
-.dialog-actions-right {
-  display: flex;
-  gap: 8px;
-}
-
-.btn {
-  min-height: 37px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 600;
-  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
-}
-
-.btn:hover {
-  border-color: var(--border-strong);
-  background: rgba(255, 255, 255, 0.075);
-  color: var(--text);
-}
-
-.btn.primary {
-  border-color: transparent;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #07101f;
-}
-
-.btn.primary:hover {
-  filter: brightness(1.06);
-  color: #07101f;
-}
-
-.btn:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
-
 /* ── Toast / loader / misc ────────────────────────────────── */
 
 .toast {
@@ -2597,7 +2368,6 @@ body.is-loading .hero-card::after {
 @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.35; } 30% { transform: translateY(-3px); opacity: 1; } }
 @keyframes msg-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes dropdown-in { from { opacity: 0; transform: translateY(-4px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes dialog-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 @keyframes rain-fall { 0% { transform: translateY(-2px); opacity: 0; } 25% { opacity: 0.9; } 100% { transform: translateY(5px); opacity: 0; } }
 @keyframes snow-fall { 0% { transform: translateY(-2px); opacity: 0; } 30% { opacity: 0.95; } 100% { transform: translateY(5px); opacity: 0; } }
@@ -2876,13 +2646,6 @@ body.is-loading .hero-card::after {
     font-size: 8.5px;
   }
 
-  .dialog-actions {
-    flex-wrap: wrap;
-  }
-
-  .dialog-actions-right {
-    margin-left: auto;
-  }
 }
 
 @media (max-width: 460px) {
@@ -3018,10 +2781,6 @@ body.is-loading .hero-card::after {
 
   .ai-head {
     grid-template-columns: 38px minmax(0, 1fr) auto;
-  }
-
-  .ai-head > .icon-btn {
-    display: none;
   }
 
   .ai-heading h2 {

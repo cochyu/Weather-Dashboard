@@ -73,9 +73,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
         </button>
         <button class="unit-toggle" id="unitToggle" type="button" aria-label="切换温度单位，当前为摄氏度">°C</button>
-        <button class="icon-btn" type="button" data-open-ai-settings title="配置 DeepSeek AI" aria-label="配置 DeepSeek AI">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v0a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
-        </button>
         <a class="icon-btn github-btn" href="https://github.com/cochyu/Weather-Dashboard" target="_blank" rel="noreferrer" title="在 GitHub 查看源码" aria-label="在 GitHub 查看源码">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.8c.85 0 1.71.11 2.51.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>
         </a>
@@ -126,10 +123,7 @@
               <h2 id="aiTitle">天气智囊</h2>
               <p>DeepSeek · 实时数据解读</p>
             </div>
-            <span class="ai-status is-checking" id="aiStatus" role="button" tabindex="0" data-open-ai-settings title="配置 DeepSeek AI" aria-label="配置 DeepSeek AI"><i></i> 连接中</span>
-            <button class="icon-btn small" type="button" data-open-ai-settings title="配置 AI" aria-label="配置 AI">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v0a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
-            </button>
+            <span class="ai-status is-checking" id="aiStatus"><i></i> 连接中</span>
           </div>
 
           <div class="ai-brief">
@@ -211,57 +205,6 @@
       <p>天气数据 <a href="https://openweathermap.org/" target="_blank" rel="noreferrer">OpenWeather</a> · <span id="dataSource">主数据源</span> · AI 由 <a href="https://www.deepseek.com/" target="_blank" rel="noreferrer">DeepSeek</a> 提供 · <a href="https://github.com/cochyu/Weather-Dashboard" target="_blank" rel="noreferrer">GitHub</a></p>
     </footer>
   </div>
-
-  <dialog class="settings-dialog" id="aiSettingsDialog" aria-labelledby="settingsTitle">
-    <form method="dialog" id="aiSettingsForm">
-      <header class="dialog-head">
-        <div>
-          <span class="kicker">AI CONNECTION</span>
-          <h2 id="settingsTitle">连接 DeepSeek</h2>
-        </div>
-        <button class="ghost-icon" type="button" data-close-settings aria-label="关闭设置">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
-        </button>
-      </header>
-
-      <div class="dialog-body">
-        <div class="settings-note">
-          <strong>为什么不能把 Key 写在网页里？</strong>
-          <p>GitHub Pages 只能托管静态文件，任何写进前端代码的 DeepSeek Key 都会被访客看到。推荐部署仓库里的 <code>worker/</code> 代理，或只在当前浏览器使用自己的 Key。</p>
-        </div>
-
-        <label class="field">
-          <span>DeepSeek 代理地址 <em>推荐</em></span>
-          <div class="input-shell">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="4" width="17" height="6" rx="2"/><rect x="3.5" y="14" width="17" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg>
-            <input id="proxyInput" type="text" inputmode="url" placeholder="https://weather-dashboard-ai.xxx.workers.dev/api/ai" />
-          </div>
-          <small>部署 <code>worker/</code> 后填入完整地址；留空则使用本地智能简报。</small>
-        </label>
-
-        <div class="or"><span>或者</span></div>
-
-        <label class="field">
-          <span>DeepSeek API Key <em>仅本机</em></span>
-          <div class="input-shell">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 4l4 4M14 6l4 4"/></svg>
-            <input id="keyInput" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false" />
-          </div>
-          <small>只保存在这台设备的 localStorage，不会上传到本仓库；浏览器会直接请求 DeepSeek。</small>
-        </label>
-
-        <p class="settings-status" id="settingsStatus" role="status"> </p>
-      </div>
-
-      <footer class="dialog-actions">
-        <button class="btn ghost" id="clearAiBtn" type="button">清除本机配置</button>
-        <div class="dialog-actions-right">
-          <button class="btn ghost" type="button" data-close-settings>取消</button>
-          <button class="btn primary" id="saveAiBtn" type="submit">保存并测试</button>
-        </div>
-      </footer>
-    </form>
-  </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

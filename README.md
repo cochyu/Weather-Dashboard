@@ -15,7 +15,7 @@
 - **日照轨迹**：日出日落、白昼时长、太阳当前在天空中的位置。
 - **空气质量**：AQI 等级环、PM2.5 / PM10、健康建议。
 - **DeepSeek 天气助手**：结合当前城市实时数据回答穿衣、带伞、运动、出行、空气质量等问题。
-- **本地智能简报**：没有配置 AI 时也能生成可执行的天气建议，不会出现空白面板。
+- **本地智能简报**：Worker 暂时不可用时也能生成可执行的天气建议，不会出现空白面板。
 - **细节体验**：动态天气主题、响应式布局、摄氏度/华氏度切换、城市收藏、最近搜索、定位、键盘操作、减少动效支持。
 
 ## 🖥 预览
@@ -31,7 +31,7 @@
 - [Open-Meteo](https://open-meteo.com/)：OpenWeather 暂不可用时的免 Key 兜底数据源
 - [DeepSeek API](https://www.deepseek.com/)：AI 天气助手
 - Node.js 原生 HTTP 服务：本地开发与自托管 AI 代理
-- Cloudflare Worker：生产环境 DeepSeek 安全代理（可选）
+- Cloudflare Worker：生产环境 DeepSeek 安全代理（已部署）
 - GitHub Pages：静态站点托管
 
 ## 🔐 API Key 隔离设计
@@ -41,13 +41,13 @@
 | 服务 | Key 存放位置 | 是否进入前端 | 说明 |
 | --- | --- | --- | --- |
 | OpenWeather | `assets/js/config.js` | 是 | 免费天气 Key，浏览器直接请求天气接口 |
-| DeepSeek | `.env` / Cloudflare Secret | **否** | 只由服务端代理读取，前端只请求 `/api/ai` |
+| DeepSeek | Cloudflare Worker Secret / 本地 `.env` | **否** | 只由服务端代理读取，前端只请求 Worker 的 `/api/ai` |
 
-- 前端没有任何 DeepSeek Key。
+- 前端没有任何 DeepSeek Key，也没有 API 地址或 Key 的配置入口。
 - `server/server.mjs` 和 `worker/worker.js` 共用 `shared/ai-core.mjs`，系统提示词、上下文格式、DeepSeek 调用和错误处理只维护一份。
 - AI 接口有来源白名单、请求体校验、上下文裁剪和简单频率限制。
-- 如果访客想使用自己的 DeepSeek Key，可在页面右上角「设置」中填写；Key 只保存在该浏览器的 `localStorage`，由浏览器直接请求 DeepSeek，不会上传到本仓库。
-- GitHub Pages 是纯静态托管，**无法安全保存服务端 Key**。因此线上默认使用本地智能简报，部署 Worker 后才会显示「DeepSeek 在线」。
+- 线上 DeepSeek 通过已部署的 Cloudflare Worker 调用；如果 Worker 暂时不可用，页面自动回退到本地智能简报。
+- GitHub Pages 只负责静态页面，**不会接触 DeepSeek Key**。
 
 > 请不要把 `.env`、`worker/.dev.vars` 或真实 DeepSeek Key 提交到 Git。仓库已通过 `.gitignore` 排除这些文件。
 
@@ -96,9 +96,15 @@ npm run check
 3. 等待 Pages 构建完成，访问 <https://cochyu.github.io/Weather-Dashboard/>。
 4. 仓库内的 `CNAME` 已绑定自定义域名 `www.wethdbd.top`，如不需要可删除。
 
-## 🤖 让线上站点接入 DeepSeek（推荐）
+## 🤖 DeepSeek Worker（已部署）
 
-GitHub Pages 不能运行 Node 服务，所以生产环境需要把 `worker/` 部署到 Cloudflare Workers（免费额度足够个人使用）。
+线上 AI 已通过 Cloudflare Worker 代理接入，Worker 地址写在 `assets/js/config.js` 的 `ai.proxyUrl`：
+
+```text
+https://weather-dashboard-ai.quixblazevow.workers.dev/api/ai
+```
+
+当前线上页面不再提供代理地址或 API Key 配置入口。需要重新部署或迁移 Worker 时：
 
 ```bash
 # 首次使用会打开浏览器登录 Cloudflare
@@ -107,25 +113,16 @@ npx wrangler login
 # 部署代理
 npx wrangler deploy -c worker/wrangler.toml
 
-# 写入服务端 Secret（不会出现在代码或前端）
+# 写入/更新服务端 Secret（不会出现在代码或前端）
 npx wrangler secret put DEEPSEEK_API_KEY -c worker/wrangler.toml
 ```
 
-部署完成后会得到一个类似这样的地址：
-
-```text
-https://weather-dashboard-ai.<your-subdomain>.workers.dev/api/ai
-```
-
-打开线上站点，点击右上角齿轮 → 在「DeepSeek 代理地址」中粘贴该地址 → **保存并测试**。状态变成「DeepSeek 在线」即可。
-
-也可以把地址写进 `assets/js/config.js` 的 `ai.proxyUrl`，这样所有访客都会使用同一个代理：
+如果 Worker 名称或账号子域变化，只需同步修改 `assets/js/config.js`：
 
 ```js
 ai: {
-  proxyUrl: 'https://weather-dashboard-ai.xxx.workers.dev/api/ai',
+  proxyUrl: 'https://your-worker.your-subdomain.workers.dev/api/ai',
   model: 'deepseek-chat',
-  allowByok: true,
   maxHistory: 8
 }
 ```
@@ -157,10 +154,10 @@ Weather-Dashboard/
 │  ├─ js/
 │  │  ├─ app.js               # 页面状态与交互
 │  │  ├─ api.js               # OpenWeather / Open-Meteo 数据层
-│  │  ├─ ai.js                # AI 对话、设置、本地智能简报
+│  │  ├─ ai.js                # AI 对话、Worker 探测、本地智能简报
 │  │  ├─ cities.js            # 中文城市库与搜索结果整理
 │  │  ├─ icons.js             # 内联 SVG 天气图标与 UI 图标
-│  │  ├─ config.js            # 公开前端配置（只放 OpenWeather Key）
+│  │  ├─ config.js            # 公开前端配置（OpenWeather Key + AI 代理地址）
 │  │  └─ utils.js             # 时间、温度、风、AQI、文本渲染工具
 │  └─ img/                    # README 预览图
 ├─ server/server.mjs          # 本地开发 / 自托管服务器 + AI 代理
@@ -174,10 +171,10 @@ Weather-Dashboard/
 ## 🧠 AI 助手如何工作
 
 1. 页面把当前城市、实时天气、未来时段、5 天预报、空气质量整理成精简的 JSON 上下文。
-2. 请求同源 `/api/ai`（本地 Node）或已配置的 Worker 地址。
+2. 请求 Cloudflare Worker 的 `/api/ai`（本地开发时也可以由 Node 服务提供同源 `/api/ai`）。
 3. 服务端把上下文转成中文提示词，调用 DeepSeek `deepseek-chat`，返回纯文本。
 4. 前端用安全的轻量 Markdown 渲染器展示回复，不直接插入未转义的 HTML。
-5. 没有 AI 服务时，前端使用同一份天气上下文生成规则化简报，保证页面始终可用。
+5. Worker 不可用时，前端使用同一份天气上下文生成规则化简报，保证页面始终可用。
 
 ## 📌 说明
 
